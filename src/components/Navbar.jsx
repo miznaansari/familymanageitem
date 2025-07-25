@@ -173,8 +173,8 @@ const Navbar = () => {
                 <ul className="menu menu-horizontal px-1">
                     <li><Link to="/">Home</Link></li>
                     <li><Link to="/add">Add</Link></li>
-              {!user?.uid && (      <li><Link to="/signup">Signup</Link></li>)}
-                     {user?.uid && ( // ✅ Show logout only if uid exists
+                    {!user?.uid && (<li><Link to="/signup">Signup</Link></li>)}
+                    {user?.uid && ( // ✅ Show logout only if uid exists
                         <li>
                             <button onClick={handleLogout} className="btn btn-sm">
                                 Logout
