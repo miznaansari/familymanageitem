@@ -205,6 +205,7 @@ const Navbar = () => {
                     >
                         <li><Link to="/">Home</Link></li>
                         <li><Link to="/signup">Signup</Link></li>
+                        <li><Link to="/add">Add</Link></li>
                         {user?.uid && ( // ✅ Show logout only if uid exists
                             <li>
                                 <button onClick={handleLogout} className="btn btn-sm">
