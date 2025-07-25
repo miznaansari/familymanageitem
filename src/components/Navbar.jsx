@@ -5,76 +5,76 @@ const Navbar = () => {
     const [denied, setDenied] = useState(false);
     const [ableNotification, setAbleNotification] = useState(false);
 
-    useEffect(() => {
-        // Check initial permission
-        if (window?.OneSignalDeferred) {
-            window.OneSignalDeferred.push(async (OneSignal) => {
-                const permission = await OneSignal.Notifications.permission;
-                if (permission === "granted") {
-                    setAbleNotification(true);
-                } else if (permission === "denied") {
+ 
+
+const handleAllowNotification = async () => {
+    try {
+        console.log("Initializing OneSignal...");
+
+        if (!window.OneSignalDeferred) {
+            console.warn("OneSignalDeferred not available.");
+            return;
+        }
+
+        window.OneSignalDeferred.push(async (OneSignal) => {
+            await OneSignal.init({
+                appId: '63837d95-a8d2-456f-b95e-31be1d64c10b',
+                allowLocalhostAsSecureOrigin: true,
+                notifyButton: { enable: false },
+            });
+
+            const storedUser = JSON.parse(localStorage.getItem("user"));
+            const uid = storedUser?.uid;
+
+            if (!uid) {
+                console.warn("User UID not found in localStorage.");
+                return;
+            }
+
+            // Check current permission
+            const permission = await OneSignal.Notifications.permission;
+            console.log("Current permission:", permission);
+
+            if (permission !== "granted") {
+                const result = await OneSignal.Notifications.requestPermission();
+                console.log("User permission result:", result);
+
+                if (result !== "granted") {
                     setDenied(true);
-                }
-            });
-        }
-    }, []);
-
-
-    const handleAllowNotification = async () => {
-        try {
-            console.log("Initializing OneSignal");
-
-            window.OneSignalDeferred.push(async (OneSignal) => {
-                await OneSignal.init({
-                    appId: '63837d95-a8d2-456f-b95e-31be1d64c10b',
-                    allowLocalhostAsSecureOrigin: true,
-                });
-                const storedUser = JSON.parse(localStorage.getItem("user"));
-                const uid = storedUser?.uid;
-
-                if (!uid) {
-                    console.warn("User UID not found in localStorage.");
+                    console.warn("User denied notification permission.");
                     return;
                 }
+            }
 
-                const currentPermission = await  OneSignal.Notifications.permission;
-                await OneSignal.login(String(uid));
+            // Permission granted - proceed to login
+            await OneSignal.login(String(uid));
+            console.log("Logged into OneSignal as:", uid);
 
+            // Wait a bit for the ID to become available
+            const onesignalId = await OneSignal.User.getId();
+            console.log("OneSignal User ID:", onesignalId);
 
+            const isSubscribed = await OneSignal.Notifications.isSubscribed();
+            console.log("Is user subscribed?", isSubscribed);
 
-                if (currentPermission !== "granted") {
-                    const result = await OneSignal.Notifications.requestPermission();
-                    if (result !== "granted") {
-                        setDenied(true);
-                        console.warn("User denied notification permission.");
-                        return;
-                    }
-                }
+            if (!isSubscribed || !onesignalId) {
+                console.warn("User is not properly subscribed or OneSignal ID not ready.");
+                return;
+            }
 
-                // Now safe to login
-                // await OneSignal.login(String(user_admin_id));
-
-                // const extId = await OneSignal.User.getExternalId();
-                // const onesignalId = await OneSignal.User.getId();
-                // console.log("External ID set to:", extId);
-                // console.log("OneSignal ID:", onesignalId);
-
-                if (!onesignalId) {
-                    console.warn("OneSignal ID not ready yet.");
-                    return;
-                }
-
-                new Notification("Welcome to EKMC Platform!", {
-                    body: "Thank you for allowing notifications.",
-                    icon: "/icon196.png",
-                });
-
-                setableNotification(true);
+            // Show welcome notification
+            new Notification("Welcome to EKMC Platform!", {
+                body: "Thank you for allowing notifications.",
+                icon: "/icon196.png",
             });
-        } catch (error) {
-            console.error("Error setting up OneSignal:", error);
-        }
-    };
+
+            setAbleNotification(true); // ✅ fixed typo: was setableNotification
+        });
+    } catch (error) {
+        console.error("Error during OneSignal setup:", error);
+    }
+};
+
 
     // const handleAllowNotification = () => {
     //     if (window?.OneSignalDeferred) {
