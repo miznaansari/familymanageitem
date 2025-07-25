@@ -189,6 +189,7 @@ const Navbar = () => {
                     >
                         <li><Link to="/">Home</Link></li>
                         <li><Link to="/signup">Signup</Link></li>
+                        <li><Link to="/add">Add</Link></li>
                         {!ableNotification && (
                             <li>
                                 <button onClick={handleAllowNotification}>
