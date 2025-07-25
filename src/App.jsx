@@ -9,8 +9,9 @@ function App() {
 
   return (
     <>
+    <Navbar />
         <Routes>
-          <Route path="/" element={<Navbar />} />
+          {/* <Route path="/" element={} /> */}
           <Route path="/signup" element={<Signup />} />
           <Route path="/add" element={<AddFamilyMember />} />
         </Routes>
