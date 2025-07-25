@@ -5,75 +5,105 @@ const Navbar = () => {
     const [denied, setDenied] = useState(false);
     const [ableNotification, setAbleNotification] = useState(false);
 
- 
 
-const handleAllowNotification = async () => {
-    try {
-        console.log("Initializing OneSignal...");
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const uid = storedUser?.uid;
 
-        if (!window.OneSignalDeferred) {
-            console.warn("OneSignalDeferred not available.");
-            return;
-        }
+    if (!uid || !window.OneSignalDeferred) return;
 
-        window.OneSignalDeferred.push(async (OneSignal) => {
+    window.OneSignalDeferred.push(async (OneSignal) => {
+        try {
+            console.log("Initializing OneSignal...");
+
+            // ✅ Wait for proper initialization
             await OneSignal.init({
                 appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
                 allowLocalhostAsSecureOrigin: true,
                 notifyButton: { enable: false },
             });
 
-            const storedUser = JSON.parse(localStorage.getItem("user"));
-            const uid = storedUser?.uid;
-
-            if (!uid) {
-                console.warn("User UID not found in localStorage.");
-                return;
-            }
-
-            // Check current permission
-            const permission = await OneSignal.Notifications.permission;
-            console.log("Current permission:", permission);
-
-            if (permission !== "granted") {
-                const result = await OneSignal.Notifications.requestPermission();
-                console.log("User permission result:", result);
-
-                if (result !== "granted") {
-                    setDenied(true);
-                    console.warn("User denied notification permission.");
-                    return;
-                }
-            }
-
-            // Permission granted - proceed to login
-            await OneSignal.login(String(uid));
-            console.log("Logged into OneSignal as:", uid);
-
-            // Wait a bit for the ID to become available
-            const onesignalId = await OneSignal.User.getId();
-            console.log("OneSignal User ID:", onesignalId);
+            // ✅ Now it's safe to login
+            await OneSignal.login(uid);
+            console.log("Logged in again:", uid);
 
             const isSubscribed = await OneSignal.Notifications.isSubscribed();
-            console.log("Is user subscribed?", isSubscribed);
+            console.log("Subscribed:", isSubscribed);
+        } catch (err) {
+            console.error("Login failed on revisit", err);
+        }
+    });
+}, []);
 
-            if (!isSubscribed || !onesignalId) {
-                console.warn("User is not properly subscribed or OneSignal ID not ready.");
+
+
+    const handleAllowNotification = async () => {
+        try {
+            console.log("Initializing OneSignal...");
+
+            if (!window.OneSignalDeferred) {
+                console.warn("OneSignalDeferred not available.");
                 return;
             }
 
-            // Show welcome notification
-            new Notification("Welcome to EKMC Platform!", {
-                body: "Thank you for allowing notifications.",
-                icon: "/icon196.png",
-            });
+            window.OneSignalDeferred.push(async (OneSignal) => {
+                await OneSignal.init({
+                    appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
+                    allowLocalhostAsSecureOrigin: true,
+                    notifyButton: { enable: false },
+                });
 
-            setAbleNotification(true); // ✅ fixed typo: was setableNotification
-        });
-    } catch (error) {
-        console.error("Error during OneSignal setup:", error);
-    }
-};
+                const storedUser = JSON.parse(localStorage.getItem("user"));
+                const uid = storedUser?.uid;
+
+                if (!uid) {
+                    console.warn("User UID not found in localStorage.");
+                    return;
+                }
+
+                // Check current permission
+                const permission = await OneSignal.Notifications.permission;
+                console.log("Current permission:", permission);
+
+                if (permission !== "granted") {
+                    const result = await OneSignal.Notifications.requestPermission();
+                    console.log("User permission result:", result);
+
+                    if (result !== "granted") {
+                        setDenied(true);
+                        console.warn("User denied notification permission.");
+                        return;
+                    }
+                }
+
+                // Permission granted - proceed to login
+                await OneSignal.login(String(uid));
+                console.log("Logged into OneSignal as:", uid);
+
+                // Wait a bit for the ID to become available
+                const onesignalId = await OneSignal.User.getId();
+                console.log("OneSignal User ID:", onesignalId);
+
+                const isSubscribed = await OneSignal.Notifications.isSubscribed();
+                console.log("Is user subscribed?", isSubscribed);
+
+                if (!isSubscribed || !onesignalId) {
+                    console.warn("User is not properly subscribed or OneSignal ID not ready.");
+                    return;
+                }
+
+                // Show welcome notification
+                new Notification("Welcome to EKMC Platform!", {
+                    body: "Thank you for allowing notifications.",
+                    icon: "/icon196.png",
+                });
+
+                setAbleNotification(true); // ✅ fixed typo: was setableNotification
+            });
+        } catch (error) {
+            console.error("Error during OneSignal setup:", error);
+        }
+    };
 
 
     // const handleAllowNotification = () => {
