@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router"; // ✅ Correct package
+import { Link, useNavigate } from "react-router"; // ✅ Correct package
 
 const Navbar = () => {
     const [denied, setDenied] = useState(false);
@@ -9,6 +9,8 @@ const Navbar = () => {
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem("user"));
         const uid = storedUser?.uid;
+        setUser(storedUser);
+
 
         if (!uid || !window.OneSignalDeferred) return;
 
@@ -35,7 +37,7 @@ const Navbar = () => {
         });
     }, []);
 
-
+    const [user, setUser] = useState(null); // ✅ NEW: user state
 
     const handleAllowNotification = async () => {
         try {
@@ -55,7 +57,6 @@ const Navbar = () => {
 
                 const storedUser = JSON.parse(localStorage.getItem("user"));
                 const uid = storedUser?.uid;
-
                 if (!uid) {
                     console.warn("User UID not found in localStorage.");
                     return;
@@ -154,6 +155,13 @@ const Navbar = () => {
     //         });
     //     }
     // };
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.clear(); // or localStorage.removeItem("user");
+        console.log("User logged out and localStorage cleared");
+        navigate("/signup"); // Redirect to login page (or homepage)
+    };
 
     return (
         <div className="navbar bg-base-100 shadow-md">
@@ -164,7 +172,15 @@ const Navbar = () => {
             <div className="navbar-center hidden md:flex">
                 <ul className="menu menu-horizontal px-1">
                     <li><Link to="/">Home</Link></li>
-                    <li><Link to="/signup">Signup</Link></li>
+                    <li><Link to="/add">Add</Link></li>
+              {!user?.uid && (      <li><Link to="/signup">Signup</Link></li>)}
+                     {user?.uid && ( // ✅ Show logout only if uid exists
+                        <li>
+                            <button onClick={handleLogout} className="btn btn-sm">
+                                Logout
+                            </button>
+                        </li>
+                    )}
                     {!ableNotification && (
                         <li>
                             <button onClick={handleAllowNotification} className="btn btn-sm">
@@ -189,7 +205,14 @@ const Navbar = () => {
                     >
                         <li><Link to="/">Home</Link></li>
                         <li><Link to="/signup">Signup</Link></li>
-                        <li><Link to="/add">Add</Link></li>
+                        {user?.uid && ( // ✅ Show logout only if uid exists
+                            <li>
+                                <button onClick={handleLogout} className="btn btn-sm">
+                                    Logout
+                                </button>
+                            </li>
+                        )}
+
                         {!ableNotification && (
                             <li>
                                 <button onClick={handleAllowNotification}>
