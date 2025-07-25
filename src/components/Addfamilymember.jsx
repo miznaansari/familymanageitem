@@ -58,7 +58,7 @@ const AddFamilyMember = () => {
 
 
        // Call Express API to send notification
-    await fetch("http://localhost:3000/send-notification", {
+    await fetch(`${import.meta.env.VITE_BACKEND_API}/send-notification`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
