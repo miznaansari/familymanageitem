@@ -6,34 +6,34 @@ const Navbar = () => {
     const [ableNotification, setAbleNotification] = useState(false);
 
 
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    const uid = storedUser?.uid;
+    useEffect(() => {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const uid = storedUser?.uid;
 
-    if (!uid || !window.OneSignalDeferred) return;
+        if (!uid || !window.OneSignalDeferred) return;
 
-    window.OneSignalDeferred.push(async (OneSignal) => {
-        try {
-            console.log("Initializing OneSignal...");
+        window.OneSignalDeferred.push(async (OneSignal) => {
+            try {
+                console.log("Initializing OneSignal...");
 
-            // ✅ Wait for proper initialization
-            await OneSignal.init({
-                appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
-                allowLocalhostAsSecureOrigin: true,
-                notifyButton: { enable: false },
-            });
+                // ✅ Wait for proper initialization
+                await OneSignal.init({
+                    appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
+                    allowLocalhostAsSecureOrigin: true,
+                    notifyButton: { enable: false },
+                });
 
-            // ✅ Now it's safe to login
-            await OneSignal.login(uid);
-            console.log("Logged in again:", uid);
+                // ✅ Now it's safe to login
+                await OneSignal.login(uid);
+                console.log("Logged in again:", uid);
 
-            const isSubscribed = await OneSignal.Notifications.isSubscribed();
-            console.log("Subscribed:", isSubscribed);
-        } catch (err) {
-            console.error("Login failed on revisit", err);
-        }
-    });
-}, []);
+                const isSubscribed = await OneSignal.Notifications.isSubscribed();
+                console.log("Subscribed:", isSubscribed);
+            } catch (err) {
+                console.error("Login failed on revisit", err);
+            }
+        });
+    }, []);
 
 
 
