@@ -18,7 +18,7 @@ const handleAllowNotification = async () => {
 
         window.OneSignalDeferred.push(async (OneSignal) => {
             await OneSignal.init({
-                appId: '63837d95-a8d2-456f-b95e-31be1d64c10b',
+                appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
                 allowLocalhostAsSecureOrigin: true,
                 notifyButton: { enable: false },
             });
