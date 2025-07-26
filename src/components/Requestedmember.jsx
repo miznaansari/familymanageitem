@@ -102,7 +102,8 @@ export default function RequestedMember() {
     return () => unsubscribeAuth();
   }, []);
 
-  const handleAccept = async (req) => {
+const handleAccept = async (req) => {
+  try {
     const ref = doc(db, "friendRequests", req.id);
     await updateDoc(ref, { status: "accepted" });
 
@@ -115,12 +116,30 @@ export default function RequestedMember() {
         message: `${user.email} accepted your friend request.`,
       }),
     });
-  };
+  } catch (error) {
+    console.error("Error accepting request:", error);
+  }
+};
 
-  const handleReject = async (req) => {
+const handleReject = async (req) => {
+  try {
     const ref = doc(db, "friendRequests", req.id);
     await updateDoc(ref, { status: "rejected" });
-  };
+
+    await fetch(`${import.meta.env.VITE_BACKEND_API}/send-notification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        toUID: req.from,
+        fromUID: user.uid,
+        message: `${user.email} rejected your friend request.`,
+      }),
+    });
+  } catch (error) {
+    console.error("Error rejecting request:", error);
+  }
+};
+
 
   const renderActions = (req) => {
     if (req.direction === "sent") {
