@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router"; // Correct if you're using react-router
 
 const Navbar = () => {
-    const [user, setUser] = useState(null); // user state
+    const [user, setUser] = useState(null);
     const [denied, setDenied] = useState(false);
     const [ableNotification, setAbleNotification] = useState(false);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // ✅ Update user state in real-time
+    // Sync user from localStorage
     useEffect(() => {
         const syncUserFromLocalStorage = () => {
             const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -19,13 +20,8 @@ const Navbar = () => {
             });
         };
 
-        // On initial load
         syncUserFromLocalStorage();
-
-        // Listen for cross-tab changes
         window.addEventListener("storage", syncUserFromLocalStorage);
-
-        // Poll every second for same-tab changes
         const interval = setInterval(syncUserFromLocalStorage, 1000);
 
         return () => {
@@ -34,7 +30,7 @@ const Navbar = () => {
         };
     }, []);
 
-    // ✅ OneSignal auto-login if already granted
+    // Auto-login and check subscription
     useEffect(() => {
         const uid = user?.uid;
         if (!uid || !window.OneSignalDeferred) return;
@@ -48,21 +44,23 @@ const Navbar = () => {
                 });
 
                 await OneSignal.login(uid);
-                const isPushEnabled = await OneSignal.User.PushSubscription.optedIn; //v16 new version
-                console.log('Is Push Enabled:', isPushEnabled);
+                const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
+                console.log("Is Push Enabled:", isPushEnabled);
+                setAbleNotification(isPushEnabled);
             } catch (err) {
                 console.error("OneSignal login failed:", err);
             }
         });
     }, [user]);
 
-    // ✅ Request notification permission
     const handleAllowNotification = async () => {
         try {
             if (!window.OneSignalDeferred) {
                 console.warn("OneSignalDeferred not found.");
                 return;
             }
+
+            setLoading(true); // Show loader
 
             window.OneSignalDeferred.push(async (OneSignal) => {
                 await OneSignal.init({
@@ -76,37 +74,44 @@ const Navbar = () => {
                     const result = await OneSignal.Notifications.requestPermission();
                     if (result !== "granted") {
                         setDenied(true);
+                        setLoading(false);
                         return;
                     }
                 }
 
                 const uid = user?.uid;
-                if (!uid) return;
-
-                await OneSignal.login(uid);
-                const onesignalId = await OneSignal.User.getId();
-                const isSubscribed = await OneSignal.Notifications.isSubscribed();
-
-                if (!onesignalId || !isSubscribed) {
-                    console.warn("Not fully subscribed.");
+                if (!uid) {
+                    setLoading(false);
                     return;
                 }
 
-                new Notification("Welcome to EKMC Platform!", {
-                    body: "Thank you for allowing notifications.",
+                await OneSignal.login(uid);
+                const onesignalId = await OneSignal.User.getId();
+                const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
+
+                if (!onesignalId || !isPushEnabled) {
+                    console.warn("Not fully subscribed.");
+                    setLoading(false);
+                    return;
+                }
+
+                new Notification("Welcome to Family Manage!", {
+                    body: "Thank you for subscribing to notifications.",
                     icon: "/icon196.png",
                 });
 
                 setAbleNotification(true);
+                setLoading(false);
             });
         } catch (error) {
-            console.error("Notification permission error:", error);
+            console.error("Notification subscription error:", error);
+            setLoading(false);
         }
     };
 
     const handleLogout = () => {
         localStorage.clear();
-        window.dispatchEvent(new Event("storage")); // 🔁 trigger update in same tab
+        window.dispatchEvent(new Event("storage")); // Sync state across tabs
         console.log("Logged out");
         navigate("/signup");
     };
@@ -126,7 +131,16 @@ const Navbar = () => {
                     {!user?.uid && <li><Link to="/signup">Signup</Link></li>}
                     {user?.uid && <li><button onClick={handleLogout} className="btn btn-sm">Logout</button></li>}
                     {user?.uid && !ableNotification && (
-                        <li><button onClick={handleAllowNotification} className="btn btn-sm">Allow Notification</button></li>
+                        <li>
+                            <button onClick={handleAllowNotification} className="btn btn-sm">
+                                Subscribe
+                            </button>
+                        </li>
+                    )}
+                    {user?.uid && ableNotification && (
+                        <li>
+                            <span className="text-green-600 font-semibold">🔔 Subscribed</span>
+                        </li>
                     )}
                 </ul>
             </div>
@@ -150,7 +164,10 @@ const Navbar = () => {
                         {!user?.uid && <li><Link to="/signup">Signup</Link></li>}
                         {user?.uid && <li><button onClick={handleLogout} className="btn btn-sm w-full">Logout</button></li>}
                         {user?.uid && !ableNotification && (
-                            <li><button onClick={handleAllowNotification} className="btn btn-sm w-full">Allow Notification</button></li>
+                            <li><button onClick={handleAllowNotification} className="btn btn-sm w-full">Subscribe</button></li>
+                        )}
+                        {user?.uid && ableNotification && (
+                            <li><span className="text-green-600 font-semibold">🔔 Subscribed</span></li>
                         )}
                     </ul>
                 </div>
@@ -162,6 +179,13 @@ const Navbar = () => {
                     <div className="alert alert-error text-sm">
                         Notifications are blocked. Please allow them in your browser settings.
                     </div>
+                </div>
+            )}
+
+            {/* Fullscreen Loader */}
+            {loading && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
+                    <span className="loading loading-spinner text-white text-4xl"></span>
                 </div>
             )}
         </div>
