@@ -163,7 +163,7 @@ const Navbar = () => {
         navigate("/signup"); // Redirect to login page (or homepage)
     };
 
-     return (
+    return (
         <div className="navbar bg-base-100 shadow-md sticky top-0 left-0 right-0 z-50">
             <div className="navbar-start">
                 <Link to="/" className="btn btn-ghost text-xl">Family Management</Link>
@@ -173,6 +173,7 @@ const Navbar = () => {
             <div className="navbar-center hidden md:flex">
                 <ul className="menu menu-horizontal px-1 gap-2">
                     <li><Link to="/">Home</Link></li>
+                    <li><Link to="/request">Request</Link></li>
                     <li><Link to="/add">Add</Link></li>
                     {!user?.uid && <li><Link to="/signup">Signup</Link></li>}
                     {user?.uid && (
@@ -198,6 +199,8 @@ const Navbar = () => {
                         className="menu menu-sm dropdown-content mt-3 p-4 shadow bg-base-100 rounded-box w-60 space-y-2"
                     >
                         <li><Link to="/">Home</Link></li>
+                        <li><Link to="/request">Request</Link></li>
+
                         <li><Link to="/add">Add</Link></li>
                         {!user?.uid && <li><Link to="/signup">Signup</Link></li>}
                         {user?.uid && (
