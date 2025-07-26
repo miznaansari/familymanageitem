@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { db, auth } from "../firebase";
+import axios from 'axios';
 import {
   collection,
   addDoc,
@@ -12,77 +13,89 @@ import {
 const AddFamilyMember = () => {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
+  const [message, setMessage] = useState("");
 
- const handleRequest = async () => {
-  if (!email) return setStatus("Please enter an email");
+  const handleRequest = async () => {
+    if (!email) return setStatus("Please enter an email");
 
-  try {
-    // 1. Find user by email
-    const userQuery = query(
-      collection(db, "users"),
-      where("email", "==", email)
-    );
-    const snapshot = await getDocs(userQuery);
+    try {
+      // 1. Find user by email
+      const userQuery = query(
+        collection(db, "users"),
+        where("email", "==", email)
+      );
+      const snapshot = await getDocs(userQuery);
 
-    if (snapshot.empty) {
-      setStatus("User not found");
-      return;
-    }
+      if (snapshot.empty) {
+        setStatus("User not found");
+        return;
+      }
 
-    const receiver = snapshot.docs[0];
-    const receiverUID = receiver.id;
-    const senderUID = auth.currentUser.uid;
+      const receiver = snapshot.docs[0];
+      const receiverUID = receiver.id;
+      const senderUID = auth.currentUser.uid;
 
-    // 2. Check if a request already exists
-    const requestQuery = query(
-      collection(db, "friendRequests"),
-      where("from", "==", senderUID),
-      where("to", "==", receiverUID),
-      where("status", "==", "pending")
-    );
-    const requestSnap = await getDocs(requestQuery);
+      // 2. Check if a request already exists
+      const requestQuery = query(
+        collection(db, "friendRequests"),
+        where("from", "==", senderUID),
+        where("to", "==", receiverUID),
+        where("status", "==", "pending")
+      );
+      const requestSnap = await getDocs(requestQuery);
 
-    if (!requestSnap.empty) {
-      // ✅ Only notify, but do not store again
-      await fetch(`${import.meta.env.VITE_BACKEND_API}/send-notification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          toUID: receiverUID,
-          fromUID: senderUID,
-          message: `Reminder: You have a pending family request from ${auth.currentUser.email}`,
-        }),
+      if (!requestSnap.empty) {
+        // ✅ Only notify, but do not store again
+        const res = await axios.post(
+          `${import.meta.env.VITE_BACKEND_API}/send-notification`,
+          {
+            toUID: receiverUID,
+            fromUID: senderUID,
+            message: `Reminder: You have a pending family request from ${auth.currentUser.email}`,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        console.log('res', res.data.response.errors[0] )
+        setMessage(res.data.response.errors[0] || "Notification sent successfully");
+        setStatus("You already sent a request. We reminded them again.");
+        return; // 🔁 Skip storing duplicate
+      }
+
+      // 3. Add new request (if not duplicate)
+      await addDoc(collection(db, "friendRequests"), {
+        from: senderUID,
+        to: receiverUID,
+        status: "pending",
+        createdAt: serverTimestamp(),
       });
 
-      setStatus("You already sent a request. We reminded them again.");
-      return; // 🔁 Skip storing duplicate
+      // 4. Send notification
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API}/send-notification`,
+        {
+          toUID: receiverUID,
+          fromUID: senderUID,
+          message: `You have a new family request from ${auth.currentUser.email}`,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('res', res.data.response.errors[0])
+      setMessage(res.data.response.errors[0] || "Notification sent successfully");
+
+      setStatus("Request sent");
+    } catch (error) {
+      console.error("Error sending request:", error);
+      setStatus("Error sending request");
     }
-
-    // 3. Add new request (if not duplicate)
-    await addDoc(collection(db, "friendRequests"), {
-      from: senderUID,
-      to: receiverUID,
-      status: "pending",
-      createdAt: serverTimestamp(),
-    });
-
-    // 4. Send notification
-    await fetch(`${import.meta.env.VITE_BACKEND_API}/send-notification`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        toUID: receiverUID,
-        fromUID: senderUID,
-        message: `You have a new family request from ${auth.currentUser.email}`,
-      }),
-    });
-
-    setStatus("Request sent");
-  } catch (error) {
-    console.error("Error sending request:", error);
-    setStatus("Error sending request");
-  }
-};
+  };
 
 
 
@@ -100,6 +113,7 @@ const AddFamilyMember = () => {
         Send Request
       </button>
       {status && <p className="mt-2 text-sm text-info">{status}</p>}
+      {message && <p className="mt-2 text-sm text-info">{message}</p>}
     </div>
   );
 };
