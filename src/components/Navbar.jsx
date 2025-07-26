@@ -64,35 +64,32 @@ const Navbar = () => {
 
                 const permission = OneSignal.Notifications.permission; // ❗ Fix here
                 console.log("4 — Current permission:", permission);
-                const storedUser = JSON.parse(localStorage.getItem("user"));
-                const uid = storedUser?.uid;
-                await OneSignal.login(uid);
-                if (typeof permission !== "string") {
+
+                if (!permission) {
                     console.error("🚫 Invalid permission response. SDK may not be ready.");
                     return;
                 }
 
-                if (permission === "granted") {
-                    await OneSignal.Notifications.subscribe();
+                if (permission) {
+                    // await OneSignal.Notifications.subscribe();
                     console.log("6 — Subscribed immediately.");
                 } else if (permission === "default") {
                     await OneSignal.Notifications.requestPermission();
                     console.log("5 — Requested permission.");
-                    await OneSignal.Notifications.subscribe();
+                    // await OneSignal.Notifications.subscribe();
                     console.log("6 — Subscribed.");
                 } else {
                     console.warn("Permission denied.");
-                    setDenied(true);
+                    // setDenied(true);
                     return;
                 }
 
                 const isSubscribed = OneSignal.User.PushSubscription.optedIn;
-                if (isSubscribed) {
-
-                    console.log("Logged in again:", uid);
-                }
                 setAbleNotification(isSubscribed);
                 console.log("🔔 Subscribed successfully.");
+                  const storedUser = JSON.parse(localStorage.getItem("user"));
+                const uid = storedUser?.uid;
+                await OneSignal.login(uid);
             } catch (error) {
                 console.error("❌ Error subscribing:", error);
             }
