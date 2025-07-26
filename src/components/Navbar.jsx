@@ -64,7 +64,9 @@ const Navbar = () => {
 
                 const permission = OneSignal.Notifications.permission; // ❗ Fix here
                 console.log("4 — Current permission:", permission);
-
+                const storedUser = JSON.parse(localStorage.getItem("user"));
+                const uid = storedUser?.uid;
+                await OneSignal.login(uid);
                 if (typeof permission !== "string") {
                     console.error("🚫 Invalid permission response. SDK may not be ready.");
                     return;
@@ -85,6 +87,10 @@ const Navbar = () => {
                 }
 
                 const isSubscribed = OneSignal.User.PushSubscription.optedIn;
+                if (isSubscribed) {
+
+                    console.log("Logged in again:", uid);
+                }
                 setAbleNotification(isSubscribed);
                 console.log("🔔 Subscribed successfully.");
             } catch (error) {
@@ -131,72 +137,72 @@ const Navbar = () => {
         window.location.href = "/signup"; // Redirect to login page
     };
 
-  const hardresetonesignal = async () => {
-  try {
-    console.log("🧹 Starting full client-side reset...");
+    const hardresetonesignal = async () => {
+        try {
+            console.log("🧹 Starting full client-side reset...");
 
-    // 🗑️ Clear Local Storage
-    localStorage.clear();
-    console.log("✅ Local Storage cleared.");
+            // 🗑️ Clear Local Storage
+            localStorage.clear();
+            console.log("✅ Local Storage cleared.");
 
-    // 🗑️ Clear Session Storage
-    sessionStorage.clear();
-    console.log("✅ Session Storage cleared.");
+            // 🗑️ Clear Session Storage
+            sessionStorage.clear();
+            console.log("✅ Session Storage cleared.");
 
-    // 🍪 Delete all cookies
-    document.cookie.split(";").forEach((cookie) => {
-      const name = cookie.split("=")[0].trim();
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
-    });
-    console.log("✅ Cookies cleared.");
+            // 🍪 Delete all cookies
+            document.cookie.split(";").forEach((cookie) => {
+                const name = cookie.split("=")[0].trim();
+                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+            });
+            console.log("✅ Cookies cleared.");
 
-    // 🧠 Delete IndexedDBs
-    const deleteIndexedDB = async (name) => {
-      return new Promise((resolve) => {
-        const req = indexedDB.deleteDatabase(name);
-        req.onsuccess = () => {
-          console.log(`✅ IndexedDB "${name}" deleted.`);
-          resolve();
-        };
-        req.onerror = () => {
-          console.warn(`⚠️ Failed to delete IndexedDB "${name}".`);
-          resolve();
-        };
-        req.onblocked = () => {
-          console.warn(`⚠️ Delete blocked for IndexedDB "${name}".`);
-          resolve();
-        };
-      });
-    };
+            // 🧠 Delete IndexedDBs
+            const deleteIndexedDB = async (name) => {
+                return new Promise((resolve) => {
+                    const req = indexedDB.deleteDatabase(name);
+                    req.onsuccess = () => {
+                        console.log(`✅ IndexedDB "${name}" deleted.`);
+                        resolve();
+                    };
+                    req.onerror = () => {
+                        console.warn(`⚠️ Failed to delete IndexedDB "${name}".`);
+                        resolve();
+                    };
+                    req.onblocked = () => {
+                        console.warn(`⚠️ Delete blocked for IndexedDB "${name}".`);
+                        resolve();
+                    };
+                });
+            };
 
-    if (indexedDB.databases) {
-      const dbs = await indexedDB.databases();
-      for (const db of dbs) {
-        if (db.name) {
-          await deleteIndexedDB(db.name);
+            if (indexedDB.databases) {
+                const dbs = await indexedDB.databases();
+                for (const db of dbs) {
+                    if (db.name) {
+                        await deleteIndexedDB(db.name);
+                    }
+                }
+            } else {
+                // Fallback: manually delete known DBs
+                const knownDBs = [
+                    'ONE_SIGNAL_SDK_DB',
+                    'OneSignalApp',
+                    'OneSignalSDKStore',
+                    'OneSignalNotifications',
+                    'OneSignalIndexedDB',
+                ];
+                for (const name of knownDBs) {
+                    await deleteIndexedDB(name);
+                }
+                console.warn("⚠️ indexedDB.databases() not supported — used fallback list.");
+            }
+
+            console.log("🎉 Hard reset complete.");
+            alert("All local data has been cleared. Please refresh the page.");
+        } catch (err) {
+            console.error("❌ Hard reset failed:", err?.message || err);
         }
-      }
-    } else {
-      // Fallback: manually delete known DBs
-      const knownDBs = [
-        'ONE_SIGNAL_SDK_DB',
-        'OneSignalApp',
-        'OneSignalSDKStore',
-        'OneSignalNotifications',
-        'OneSignalIndexedDB',
-      ];
-      for (const name of knownDBs) {
-        await deleteIndexedDB(name);
-      }
-      console.warn("⚠️ indexedDB.databases() not supported — used fallback list.");
-    }
-
-    console.log("🎉 Hard reset complete.");
-    alert("All local data has been cleared. Please refresh the page.");
-  } catch (err) {
-    console.error("❌ Hard reset failed:", err?.message || err);
-  }
-};
+    };
 
 
 
@@ -213,12 +219,12 @@ const Navbar = () => {
                         <li><Link to="/signup">Signup</Link></li>
                         <li><Link to="/add">Add</Link></li>
                         <li><Link to="/request">Request</Link></li>
-                         <li>
+                        <li>
                             <button
                                 className="btn btn-sm btn-outline-success"
-                                onClick={hardresetonesignal} 
+                                onClick={hardresetonesignal}
                             >
-                                Hard reset 
+                                Hard reset
                             </button>
                         </li>
                         <li>
@@ -263,12 +269,12 @@ const Navbar = () => {
                         <li><Link to="/signup">Signup</Link></li>
                         <li><Link to="/add">Add</Link></li>
                         <li><Link to="/request">Request</Link></li>
-                         <li>
+                        <li>
                             <button
                                 className="btn btn-sm btn-outline-success"
-                                onClick={hardresetonesignal} 
+                                onClick={hardresetonesignal}
                             >
-                                Hard reset 
+                                Hard reset
                             </button>
                         </li>
                         <li>
