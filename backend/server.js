@@ -7,7 +7,12 @@ const { v4: uuidv4 } = require("uuid");
 const app = express();
 const port = 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST']
+}));
+
+
 app.use(express.json());
 
 // POST endpoint to send notification
