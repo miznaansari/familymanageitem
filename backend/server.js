@@ -54,6 +54,33 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
+
+// GET endpoint to fetch user identity from OneSignal using subscription_id
+app.get('/onesignal/user-identity/:subscription_id', async (req, res) => {
+  const { subscription_id } = req.params;
+
+  if (!subscription_id) {
+    return res.status(400).json({ success: false, error: 'Missing subscription_id' });
+  }
+
+  const url = `https://onesignal.com/api/v1/apps/${process.env.ONESIGNAL_APP_ID}/subscriptions/${subscription_id}/user/identity`;
+
+  const headers = {
+    Authorization: `Basic ${process.env.ONESIGNAL_API_KEY}`, // OneSignal REST API Key
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    const response = await axios.get(url, { headers });
+    console.log('✅ User identity fetched:', response.data);
+    res.json({ success: true, identity: response.data });
+  } catch (error) {
+    console.error('❌ Failed to fetch identity:', error.response?.data || error.message);
+    res.status(500).json({ success: false, error: error.response?.data || error.message });
+  }
+});
+
+
 // Start the server
 app.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
