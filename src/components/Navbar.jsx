@@ -29,7 +29,7 @@ const Navbar = () => {
                 await OneSignal.login(uid);
                 console.log("Logged in again:", uid);
 
-                const isSubscribed = await OneSignal.Notifications.isSubscribed();
+                // const isSubscribed = await OneSignal.Notifications.isSubscribed();
                 console.log("Subscribed:", isSubscribed);
             } catch (err) {
                 console.error("Login failed on revisit", err);
@@ -163,68 +163,54 @@ const Navbar = () => {
         navigate("/signup"); // Redirect to login page (or homepage)
     };
 
-    return (
-        <div className="navbar bg-base-100 shadow-md">
+     return (
+        <div className="navbar bg-base-100 shadow-md sticky top-0 left-0 right-0 z-50">
             <div className="navbar-start">
                 <Link to="/" className="btn btn-ghost text-xl">Family Management</Link>
             </div>
 
+            {/* Desktop Menu */}
             <div className="navbar-center hidden md:flex">
-                <ul className="menu menu-horizontal px-1">
+                <ul className="menu menu-horizontal px-1 gap-2">
                     <li><Link to="/">Home</Link></li>
                     <li><Link to="/add">Add</Link></li>
-                    {!user?.uid && (<li><Link to="/signup">Signup</Link></li>)}
-                    {user?.uid && ( // ✅ Show logout only if uid exists
-                        <li>
-                            <button onClick={handleLogout} className="btn btn-sm">
-                                Logout
-                            </button>
-                        </li>
+                    {!user?.uid && <li><Link to="/signup">Signup</Link></li>}
+                    {user?.uid && (
+                        <li><button onClick={handleLogout} className="btn btn-sm">Logout</button></li>
                     )}
                     {!ableNotification && (
-                        <li>
-                            <button onClick={handleAllowNotification} className="btn btn-sm">
-                                Allow Notification
-                            </button>
-                        </li>
+                        <li><button onClick={handleAllowNotification} className="btn btn-sm">Allow Notification</button></li>
                     )}
                 </ul>
             </div>
 
+            {/* Mobile Menu */}
             <div className="navbar-end md:hidden">
-                <div className="dropdown">
+                <div className="dropdown dropdown-end">
                     <label tabIndex={0} className="btn btn-ghost">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                                 d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </label>
                     <ul
                         tabIndex={0}
-                        className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+                        className="menu menu-sm dropdown-content mt-3 p-4 shadow bg-base-100 rounded-box w-60 space-y-2"
                     >
                         <li><Link to="/">Home</Link></li>
-                        <li><Link to="/signup">Signup</Link></li>
                         <li><Link to="/add">Add</Link></li>
-                        {user?.uid && ( // ✅ Show logout only if uid exists
-                            <li>
-                                <button onClick={handleLogout} className="btn btn-sm">
-                                    Logout
-                                </button>
-                            </li>
+                        {!user?.uid && <li><Link to="/signup">Signup</Link></li>}
+                        {user?.uid && (
+                            <li><button onClick={handleLogout} className="btn btn-sm w-full">Logout</button></li>
                         )}
-
                         {!ableNotification && (
-                            <li>
-                                <button onClick={handleAllowNotification}>
-                                    Allow Notification
-                                </button>
-                            </li>
+                            <li><button onClick={handleAllowNotification} className="btn btn-sm w-full">Allow Notification</button></li>
                         )}
                     </ul>
                 </div>
             </div>
 
+            {/* Notification Blocked Toast */}
             {denied && (
                 <div className="toast toast-top toast-center z-50">
                     <div className="alert alert-error text-sm">
