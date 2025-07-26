@@ -34,48 +34,38 @@ const AddFamilyMember = () => {
       const receiver = snapshot.docs[0];
       const receiverUID = receiver.id;
       const senderUID = auth.currentUser.uid;
-      // 🚫 Prevent sending a request to yourself
-      if (senderUID === receiverUID) {
-        setStatus("You cannot send a request to yourself");
-        return;
-      }
 
-      // 1. Query for requests where the CURRENT USER is the SENDER and the OTHER USER is the RECEIVER.
-      //    This query perfectly matches: request.auth.uid (senderUID) == resource.data.from
-      const querySentByCurrentUser = query(
+      // 2. Check if a request already exists
+      const requestQuery = query(
         collection(db, "friendRequests"),
-        where("status", "in", ["pending", "accepted"]),
-        where("from", "==", senderUID),   // Current user is the sender
-        where("to", "==", receiverUID)     // The other user is the receiver
+        where("from", "==", senderUID),
+        where("to", "==", receiverUID),
+        where("status", "==", "pending")
       );
+      const requestSnap = await getDocs(requestQuery);
 
-      // 2. Query for requests where the OTHER USER is the SENDER and the CURRENT USER is the RECEIVER.
-      //    This query perfectly matches: request.auth.uid (senderUID) == resource.data.to
-      const querySentToCurrentUser = query(
-        collection(db, "friendRequests"),
-        where("status", "in", ["pending", "accepted"]),
-        where("from", "==", receiverUID), // The other user is the sender
-        where("to", "==", senderUID)      // Current user is the receiver
-      );
+      if (!requestSnap.empty) {
+        // ✅ Only notify, but do not store again
+        const res = await axios.post(
+          `${import.meta.env.VITE_BACKEND_API}/send-notification`,
+          {
+            toUID: receiverUID,
+            fromUID: senderUID,
+            message: `Reminder: You have a pending family request from ${auth.currentUser.email}`,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        // console.log('res', res.data.response.errors[0] )
+        const errorMessage = res?.data?.response?.errors?.[0];
+        setMessage(errorMessage || "Notification sent successfully");
 
-      // Execute both queries in parallel to get their snapshots
-      const [sentBySnap, sentToSnap] = await Promise.all([
-        getDocs(querySentByCurrentUser),
-        getDocs(querySentToCurrentUser)
-      ]);
-
-      let duplicate = false;
-
-      // Check if either of the queries returned any matching documents
-      if (!sentBySnap.empty || !sentToSnap.empty) {
-        duplicate = true;
+        setStatus("You already sent a request. We reminded them again.");
+        return; // 🔁 Skip storing duplicate
       }
-      if (duplicate) {
-        // Send reminder notification if needed
-        setStatus("You already have a request with this user.");
-        return;
-      }
-
 
       // 3. Add new request (if not duplicate)
       await addDoc(collection(db, "friendRequests"), {
@@ -86,14 +76,14 @@ const AddFamilyMember = () => {
       });
 
       // 4. Send notification
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_API}/send-notification`, {
-        toUID: receiverUID,
-        fromUID: senderUID,
-        message: `You have a new family request from ${auth.currentUser.email}`,
-      }, {
-        headers: {
-          "Content-Type": "application/json"
-        }
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_API}/send-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toUID: receiverUID,
+          fromUID: senderUID,
+          message: `You have a new family request from ${auth.currentUser.email}`,
+        }),
       });
       const errorMessage = res?.data?.response?.errors?.[0];
       setMessage(errorMessage || "Notification sent successfully");

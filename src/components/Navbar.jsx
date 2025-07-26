@@ -7,6 +7,7 @@ const Navbar = () => {
     const [identityInfo, setIdentityInfo] = useState(null);
     const [identityError, setIdentityError] = useState(null);
 
+
     // Check OneSignal permission and subscription status
     useEffect(() => {
         if (!window?.Notification || !window?.OneSignalDeferred) return;
@@ -215,6 +216,9 @@ const Navbar = () => {
                         <li><Link to="/">Home</Link></li>
                         <li><Link to="/signup">Signup</Link></li>
                         <li><Link to="/add">Add</Link></li>
+                        <li><Link to="/group">Group</Link></li>
+                        <li><Link to="/family">Family</Link></li>
+
                         <li><Link to="/request">Request</Link></li>
                         <li>
                             <button
@@ -265,6 +269,9 @@ const Navbar = () => {
                         <li><Link to="/">Home</Link></li>
                         <li><Link to="/signup">Signup</Link></li>
                         <li><Link to="/add">Add</Link></li>
+                        <li><Link to="/group">Group</Link></li>
+                        <li><Link to="/family">Family</Link></li>
+
                         <li><Link to="/request">Request</Link></li>
                         <li>
                             <button
