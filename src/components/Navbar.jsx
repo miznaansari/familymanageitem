@@ -1,7 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router";
-
+import { Link, useNavigate } from "react-router";
+import { auth } from "../firebase"; // adj
 const Navbar = () => {
+    const navigate = useNavigate();
+    const user = auth.currentUser;
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (!user) {
+                navigate("/signup");
+            }
+        });
+
+        return () => unsubscribe();
+    }, [navigate]);
     const [denied, setDenied] = useState(false);
     const [ableNotification, setAbleNotification] = useState(false);
     const [identityInfo, setIdentityInfo] = useState(null);
@@ -88,7 +100,7 @@ const Navbar = () => {
                 const isSubscribed = OneSignal.User.PushSubscription.optedIn;
                 setAbleNotification(isSubscribed);
                 console.log("🔔 Subscribed successfully.");
-                  const storedUser = JSON.parse(localStorage.getItem("user"));
+                const storedUser = JSON.parse(localStorage.getItem("user"));
                 const uid = storedUser?.uid;
                 await OneSignal.login(uid);
             } catch (error) {
@@ -214,7 +226,9 @@ const Navbar = () => {
                 <div className="hidden md:flex">
                     <ul className="menu menu-horizontal px-1 space-x-4 text-sm items-center">
                         <li><Link to="/">Home</Link></li>
-                        <li><Link to="/signup">Signup</Link></li>
+                        {!auth.currentUser && (
+                            <li><Link to="/signup">Signup</Link></li>
+                        )}
                         <li><Link to="/add">Add</Link></li>
                         <li><Link to="/group">Group</Link></li>
                         <li><Link to="/family">Family</Link></li>
@@ -228,14 +242,14 @@ const Navbar = () => {
                                 Hard reset
                             </button>
                         </li>
-                        <li>
+                        {!auth.currentUser && (<li>
                             <button
                                 className="btn btn-sm btn-outline-success"
                                 onClick={handleLogout}
                             >
                                 Logout
                             </button>
-                        </li>
+                        </li>)}
                         {!ableNotification && !denied && (
                             <li>
                                 <button
@@ -267,7 +281,9 @@ const Navbar = () => {
                         className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
                     >
                         <li><Link to="/">Home</Link></li>
-                        <li><Link to="/signup">Signup</Link></li>
+                        {!auth.currentUser && (
+                            <li><Link to="/signup">Signup</Link></li>
+                        )}
                         <li><Link to="/add">Add</Link></li>
                         <li><Link to="/group">Group</Link></li>
                         <li><Link to="/family">Family</Link></li>
